@@ -1,0 +1,7 @@
+../Inc/HAL_STM32F103C6T6/src/ll/f103/gpio_f103.c:5:13:GPIO_ClockEnable	4
+../Inc/HAL_STM32F103C6T6/src/ll/f103/gpio_f103.c:19:9:GPIO_GetPortIndex	4
+../Inc/HAL_STM32F103C6T6/src/ll/f103/gpio_f103.c:33:6:GPIO_PinMode	6
+../Inc/HAL_STM32F103C6T6/src/ll/f103/gpio_f103.c:58:6:GPIO_PinModeMulti	2
+../Inc/HAL_STM32F103C6T6/src/ll/f103/gpio_f103.c:64:6:GPIO_PinToggle	2
+../Inc/HAL_STM32F103C6T6/src/ll/f103/gpio_f103.c:76:6:GPIO_DigitalWrite	2
+../Inc/HAL_STM32F103C6T6/src/ll/f103/gpio_f103.c:88:9:GPIO_DigitalRead	1

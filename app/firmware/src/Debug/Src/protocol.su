@@ -1,0 +1,6 @@
+../Src/protocol.c:8:10:Radio_CRC16	24	static
+../Src/protocol.c:27:6:RadioParser_Init	16	static
+../Src/protocol.c:34:6:RadioParser_FeedByte	32	static
+../Src/protocol.c:132:6:Radio_Init	8	static
+../Src/protocol.c:137:6:Radio_HandlePacket	32	static
+../Src/protocol.c:221:6:Radio_Task	152	static

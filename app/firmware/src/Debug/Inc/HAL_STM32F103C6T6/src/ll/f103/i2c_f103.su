@@ -1,0 +1,8 @@
+../Inc/HAL_STM32F103C6T6/src/ll/f103/i2c_f103.c:4:6:I2C_Init	48	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/i2c_f103.c:43:6:I2C_Start	16	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/i2c_f103.c:49:13:I2C_WriteByte	24	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/i2c_f103.c:56:13:I2C_Send_Address_And_Reg	16	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/i2c_f103.c:68:6:I2C_WriteReg	16	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/i2c_f103.c:76:9:I2C_WriteByteArray	32	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/i2c_f103.c:88:9:I2C_ReadReg	32	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/i2c_f103.c:95:9:I2C_Read_Burst	32	static

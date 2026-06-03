@@ -1,0 +1,10 @@
+../Src/led_strip.c:30:6:LED_STRIP_SetBrightness	16	static
+../Src/led_strip.c:40:6:LED_STRIP_Init	88	static
+../Src/led_strip.c:69:6:LED_STRIP_SetPixel	16	static
+../Src/led_strip.c:79:6:LED_STRIP_SetPixelColor	16	static
+../Src/led_strip.c:85:6:LED_STRIP_Clear	16	static
+../Src/led_strip.c:92:6:LED_STRIP_Fill	24	static
+../Src/led_strip.c:100:16:LED_Lerp8	40	static
+../Src/led_strip.c:115:6:LED_STRIP_Gradient	40	static
+../Src/led_strip.c:137:6:LED_STRIP_Show	24	static
+../Src/led_strip.c:169:6:LED_STRIP_TestRGB	8	static

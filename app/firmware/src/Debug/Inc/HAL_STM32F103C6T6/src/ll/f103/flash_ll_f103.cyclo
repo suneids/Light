@@ -1,0 +1,7 @@
+../Inc/HAL_STM32F103C6T6/src/ll/f103/flash_ll_f103.c:4:12:flash_wait_ready	3
+../Inc/HAL_STM32F103C6T6/src/ll/f103/flash_ll_f103.c:15:13:flash_clear_flags	1
+../Inc/HAL_STM32F103C6T6/src/ll/f103/flash_ll_f103.c:20:5:flash_ll_unlock	3
+../Inc/HAL_STM32F103C6T6/src/ll/f103/flash_ll_f103.c:35:5:flash_ll_lock	1
+../Inc/HAL_STM32F103C6T6/src/ll/f103/flash_ll_f103.c:41:5:flash_ll_erase_page	3
+../Inc/HAL_STM32F103C6T6/src/ll/f103/flash_ll_f103.c:70:5:flash_ll_program_halfword	5
+../Inc/HAL_STM32F103C6T6/src/ll/f103/flash_ll_f103.c:97:5:flash_ll_read_halfword	3

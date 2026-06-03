@@ -1,0 +1,2 @@
+../Inc/HAL_STM32F103C6T6/ST/f103/system_stm32f1xx.c:180:6:SystemInit	1
+../Inc/HAL_STM32F103C6T6/ST/f103/system_stm32f1xx.c:229:6:SystemCoreClockUpdate	7

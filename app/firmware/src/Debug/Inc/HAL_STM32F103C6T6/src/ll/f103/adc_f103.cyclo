@@ -1,0 +1,3 @@
+../Inc/HAL_STM32F103C6T6/src/ll/f103/adc_f103.c:4:9:getChannelNumber	4
+../Inc/HAL_STM32F103C6T6/src/ll/f103/adc_f103.c:11:6:ADC_InitMulti	10
+../Inc/HAL_STM32F103C6T6/src/ll/f103/adc_f103.c:61:6:ADC_Start	1

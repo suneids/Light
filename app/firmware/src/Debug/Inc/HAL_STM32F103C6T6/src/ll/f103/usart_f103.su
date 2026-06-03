@@ -1,0 +1,16 @@
+../Inc/HAL_STM32F103C6T6/src/ll/f103/../../../inc/../ST/f103/core_cm3.h:1511:22:__NVIC_EnableIRQ	16	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:17:6:USART_Init	64	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:68:10:USART_Available	24	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:74:6:USART_WriteByte	32	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:87:6:USART_WriteLine	40	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:102:6:USART_ReadByte	32	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:114:6:USART_ReadBytes	48	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:133:6:echo	24	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:141:9:USART_Index	16	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:148:6:USART_SetHandlers	32	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:156:13:USART_RXHandler_Default	24	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:167:13:USART_TXHandler_Default	16	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:172:6:USART1_IRQHandler	8	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:177:6:USART2_IRQHandler	8	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:182:6:USART_IRQHandler_Shared	32	static
+../Inc/HAL_STM32F103C6T6/src/ll/f103/usart_f103.c:219:10:USART_BrrCalc	32	static
