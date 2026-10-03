@@ -16,7 +16,9 @@
 #include "led_strip.h"
 #include "timetracker.h"
 #include "planner.h"
-
+#include "hexapod.h"
+#include "taskitem.h"
+#include "radioclient.h"
 #include <QQueue>
 #include <QTimer>
 
@@ -46,10 +48,6 @@ private:
     Ui::MainWindow *ui;
     QPoint dragPosition;
     bool dragging = false;
-    QSerialPort serial;
-    QByteArray rxBuffer;
-    void refreshPorts();
-    void connectSerial();
 
     QByteArray makeLedPixelPacket(uint16_t index, const QColor &color,
                                   int r_scale, int g_scale, int b_scale);
@@ -59,29 +57,35 @@ private:
     int radioTxDelayMs = 150;
     bool radioTxActive = false;
 
-
-    QQueue<RadioTxJob> radioQueue;
-    QTimer radioDelayTimer;
-    QTimer radioTimeoutTimer;
-    bool radioBusy = false;
-    bool radioWaitingResponse = false;
     bool ledSceneSending = false;
-    RadioTxJob currentRadioJob;
-
-
+    RadioClient radioClient;
     QTimer hygrometerPollTimer;
     Greenhouse *greenhouse_pg;
     LedStrip *lightning_pg;
     TimeTracker *timetracker_pg;
     Planner *planner_pg;
+    Hexapod *hexapod_pg;
+
+    uint8_t currentMove = 0u;
+    uint8_t lastHexapodMoveSent = 0u;
+    LegAngles_t hexapod_angles[6];
+
+    QTimer hexapodMoveTimer;
+    void sendHexapodMove();
     bool m_dragging = false;
     QPoint m_dragPosition;
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
-    void onSerialReadyRead();
-    void parseRadioBuffer();
+
+    void showMeScope();
+    void showRoomScope();
+    void switchPageFromCombo();
+    void addPageItem(const QString& title, QWidget* page);
+
+
+
     void handleGreenhouseStatus(const QByteArray &payload);
     void handleHygrometerStatus(const QByteArray &payload);
 
@@ -90,26 +94,10 @@ protected:
 
     void radioInitScheduler();
 
-    void radioEnqueue(const RadioTxJob &job);
-    void radioKick();
-    void radioStartJob(const RadioTxJob &job);
-    void radioFinishCurrentJob(bool ok);
-    void radioOnTimeout();
-    void radioClearPollJobs();
-    void radioEnqueueSendOnly(const QByteArray &packet,
-                              const QString &name,
-                              int afterDelayMs = 200,
-                              bool isScene = false,
-                              bool isSceneEnd = false);
 
-    void radioEnqueueRequest(const QByteArray &packet,
-                             const QString &name,
-                             uint8_t expectId,
-                             uint8_t expectCmd,
-                             int timeoutMs = 500,
-                             int afterDelayMs = 200,
-                             bool isPoll = true);
+
 
     void radioHandleParsedPacket(uint8_t id, uint8_t cmd, const QByteArray &payload);
+    void handleHexapodState(const QByteArray &data);
 };
 #endif // MAINWINDOW_H

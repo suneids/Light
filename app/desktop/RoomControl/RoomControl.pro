@@ -1,5 +1,5 @@
-QT       += core gui serialport charts
-
+QT       += core gui serialport charts network
+QT       += qml quick quickwidgets quick3d
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
@@ -10,6 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     greenhouse.cpp \
+    hexapod.cpp \
     led_strip.cpp \
     ledpointwidget.cpp \
     ledsegmentwidget.cpp \
@@ -19,10 +20,13 @@ SOURCES += \
     mainwindow_radio.cpp \
     planner.cpp \
     protocol.cpp \
+    radioclient.cpp \
+    taskitem.cpp \
     timetracker.cpp
 
 HEADERS += \
     greenhouse.h \
+    hexapod.h \
     led_strip.h \
     ledpointwidget.h \
     ledsegmentwidget.h \
@@ -30,11 +34,15 @@ HEADERS += \
     mainwindow.h \
     planner.h \
     protocol.h \
+    radioclient.h \
+    taskitem.h \
     timetracker.h
 
 FORMS += \
+    TaskCreateDialog.ui \
     TaskItem.ui \
     greenhouse.ui \
+    hexapod.ui \
     led_strip.ui \
     ledpointwidget.ui \
     ledsegmentwidget.ui \
@@ -49,3 +57,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     resources.qrc
+

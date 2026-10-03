@@ -1,9 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QtSerialPort>
-
+#include "light.h"
 #include "protocol.h"
 #include <algorithm>
+#include <QDir>
+#include <QFile>
 
 static uint8_t clamp8(int v)
 {
@@ -16,6 +18,15 @@ static uint8_t clamp8(int v)
 static uint8_t scale8(uint8_t v, int percent)
 {
     return clamp8((static_cast<int>(v) * percent) / 100);
+}
+
+
+static int16_t unpackInt16(const QByteArray &data, int offset){
+    uint16_t value =
+        static_cast<uint8_t>(data[offset]) |
+        (static_cast<uint16_t>(static_cast<uint8_t>(data[offset + 1])) << 8);
+
+    return static_cast<int16_t>(value);
 }
 
 
@@ -43,8 +54,7 @@ void MainWindow::lightSendPacket(int r, int g, int b, int r_scale, int g_scale, 
             break;
     }
     QByteArray pkt = makePacket(DEV_LIGHT, cmd, payload);
-    radioEnqueueSendOnly(pkt, message);
-
+    radioClient.send(pkt,message, 200);
 }
 
 
@@ -68,8 +78,6 @@ QByteArray MainWindow::makeLedPixelPacket(uint16_t index, const QColor &color,
 void MainWindow::makeLedScenePackets(QWidget *itemsParent, int r_scale,int g_scale,int b_scale, uint8_t brightness)
 {
     QList<QByteArray> packets;
-
-//    QWidget *itemsParent = ui->vlayout_lightning_led_items->parentWidget();
 
     QList<LedSegmentWidget*> segments =
         itemsParent->findChildren<LedSegmentWidget*>(QString(), Qt::FindDirectChildrenOnly);
@@ -118,22 +126,11 @@ void MainWindow::makeLedScenePackets(QWidget *itemsParent, int r_scale,int g_sca
     // SHOW
     packets.append(makePacket(DEV_LIGHT, CMD_LED_SCENE_SHOW, QByteArray()));
 
-    radioClearPollJobs();
+
 
     ledSceneSending = true;
     logLine(QString("LED SCENE START | packets=%1").arg(packets.size()));
-
-    for(int i = 0; i < packets.size(); i++) {
-        bool isLast = (i == packets.size() - 1);
-
-        radioEnqueueSendOnly(
-            packets[i],
-            QString("LED SCENE PACKET %1/%2").arg(i + 1).arg(packets.size()),
-            250,
-            true,
-            isLast
-        );
-    }
+    radioClient.sendScene(packets, 250);
 }
 
 
@@ -143,6 +140,27 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    radioClient.connectToDaemon();
+
+    connect(
+        &radioClient,
+        &RadioClient::packetReceived,
+        this,
+        &MainWindow::radioHandleParsedPacket
+        );
+
+    connect(
+        &radioClient,
+        &RadioClient::sceneFinished,
+        this,
+        [this]()
+        {
+            ledSceneSending = false;
+            logLine("LED SCENE DONE");
+        }
+        );
+
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     connect(ui->btn_close, &QPushButton::clicked, this, &QWidget::close);
     connect(ui->btn_minimize, &QPushButton::clicked, this, &QWidget::showMinimized);
@@ -152,62 +170,158 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     // GENERAL
-    connect(ui->btn_connection, &QPushButton::clicked, this, [this](){
-        ui->stackedWidget->setCurrentWidget(ui->pg_connection);
-    });
 
-    greenhouse_pg = new Greenhouse(ui->stackedWidget);
-    ui->stackedWidget->addWidget(greenhouse_pg);
-    connect(ui->btn_greenhouse, &QPushButton::clicked, this, [this](){
-        ui->stackedWidget->setCurrentWidget(greenhouse_pg);
-    });
+    greenhouse_pg = new Greenhouse(ui->stwidget_section);
+    ui->stwidget_section->addWidget(greenhouse_pg);
+//    connect(ui->btn_greenhouse, &QPushButton::clicked, this, [this](){
+//        ui->stwidget_section->setCurrentWidget(greenhouse_pg);
+//    });
     connect(greenhouse_pg, &Greenhouse::sendSingleParam, this, &MainWindow::sendGreenhouseSingleParam);
     connect(this, &MainWindow::updateGreenhouseStatus, greenhouse_pg, &Greenhouse::updateStatus);
 
-    lightning_pg = new LedStrip(ui->stackedWidget);
-    ui->stackedWidget->addWidget(lightning_pg);
-    connect(ui->btn_lightning, &QPushButton::clicked, this, [this](){
-        ui->stackedWidget->setCurrentWidget(lightning_pg);
-    });
+    lightning_pg = new LedStrip(ui->stwidget_section);
+    ui->stwidget_section->addWidget(lightning_pg);
+//    connect(ui->btn_lightning, &QPushButton::clicked, this, [this](){
+//        ui->stwidget_section->setCurrentWidget(lightning_pg);
+//    });
     connect(lightning_pg, &LedStrip::lightPreparePacket, this, &MainWindow::lightSendPacket);
-    connect(ui->btn_log, &QPushButton::clicked, this, [this](){
-        ui->stackedWidget->setCurrentWidget(ui->pg_log);
+//    connect(ui->btn_log, &QPushButton::clicked, this, [this](){
+//        ui->stwidget_section->setCurrentWidget(ui->pg_log);
+//    });
+
+    timetracker_pg = new TimeTracker(ui->stwidget_section);
+    ui->stwidget_section->addWidget(timetracker_pg);
+//    connect(ui->btn_time_tracker, &QPushButton::clicked, this, [this](){
+//        ui->stwidget_section->setCurrentWidget(timetracker_pg);
+//    });
+
+    planner_pg = new Planner(ui->stwidget_section);
+    ui->stwidget_section->addWidget(planner_pg);
+
+//    connect(ui->btn_planner, &QPushButton::clicked, this, [this](){
+//        ui->stwidget_section->setCurrentWidget(planner_pg);
+//    });
+
+//    connect(ui->btn_i, &QPushButton::clicked, this, [this](){
+//        ui->stwidget_section_buttons->setCurrentWidget(ui->pg_i);
+//    });
+
+//    connect(ui->btn_room, &QPushButton::clicked, this, [this](){
+//        ui->stwidget_section_buttons->setCurrentWidget(ui->pg_room);
+//    });
+
+    connect(ui->combo_scope, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index){
+        if(index == 0) showMeScope();
+        else           showRoomScope();
     });
 
-    timetracker_pg = new TimeTracker(ui->stackedWidget);
-    ui->stackedWidget->addWidget(timetracker_pg);
-    connect(ui->btn_time_tracker, &QPushButton::clicked, this, [this](){
-        ui->stackedWidget->setCurrentWidget(timetracker_pg);
+    connect(ui->combo_page, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int){
+        switchPageFromCombo();
     });
-
-    planner_pg = new Planner(ui->stackedWidget);
-    ui->stackedWidget->addWidget(planner_pg);
-    connect(ui->btn_planner, &QPushButton::clicked, this, [this](){
-        ui->stackedWidget->setCurrentWidget(planner_pg);
-    });
-
-    // General page
-    connect(ui->btn_refreshPorts, &QPushButton::clicked, this, &MainWindow::refreshPorts);
-    connect(ui->btn_connect, &QPushButton::clicked, this, &MainWindow::connectSerial);
-    connect(ui->btn_disconnect, &QPushButton::clicked, this, [this](){
-        serial.close();
-        ui->lbl_status->setText("DISCONNECTED");
-        ui->lbl_currentPort->setText("-");
-        logLine("COM DISCONECTED");
-    });
-
-
-    //GREENHOUSE
-    connect(&serial, &QSerialPort::readyRead, this, &MainWindow::onSerialReadyRead);
-
 
     //LOGS
     connect(ui->btn_log_clear, &QPushButton::clicked, this, [this](){
         ui->txt_log->clear();
     });
-    refreshPorts();
+
+    //HEXAPOD
+    // HEXAPOD
+
+    hexapod_pg = new Hexapod(ui->stwidget_section);
+    ui->stwidget_section->addWidget(hexapod_pg);
+
+    connect(hexapod_pg, &Hexapod::moveChanged,
+            this, [this](uint8_t move){
+
+                currentMove = move;
+        qDebug() << "MAIN MOVE ="
+                 << QString::number(currentMove, 16);
+                /*
+     * Сразу пробуем отправить новое состояние.
+     *
+     * Например:
+     * W press  -> 01
+     * A press  -> 05
+     * A release -> 01
+     * W release -> 00
+     */
+                sendHexapodMove();
+            });
+    hexapodMoveTimer.setInterval(150);
+    connect(&hexapodMoveTimer, &QTimer::timeout, this, &MainWindow::sendHexapodMove);
+    hexapodMoveTimer.start();
 
     radioInitScheduler();
+    showMeScope();
+    // qDebug() << "ROOT =" << QDir(":/").entryList(QDir::AllEntries);
+    // qDebug() << "MODELS =" << QDir(":/models").entryList(QDir::AllEntries);
+    // qDebug() << "GLB =" << QFile::exists(":/models/Hexapod.glb");
+}
+
+void MainWindow::addPageItem(const QString& title, QWidget* page)
+{
+    if (!page) {
+        return;
+    }
+    ui->combo_page->addItem(
+        title,
+        QVariant::fromValue<QObject*>(page)
+        );
+}
+
+
+void MainWindow::showMeScope(){
+//    ui->stwidget_section->setCurrentWidget(ui->pg_i);
+//    activeSubStack = ui->pg_i;
+
+    QSignalBlocker blocker(ui->combo_page);
+
+    ui->combo_page->clear();
+
+    addPageItem("Планировщик", planner_pg);
+    addPageItem("Трекер времени", timetracker_pg);
+
+    ui->combo_page->setCurrentIndex(0);
+
+    switchPageFromCombo();
+}
+
+
+void MainWindow::showRoomScope(){
+//    ui->stwidget_section->setCurrentWidget(ui->pg_room);
+//    activeSubStack = ui->stacked_room;
+
+    QSignalBlocker blocker(ui->combo_page);
+
+    ui->combo_page->clear();
+
+    addPageItem("Теплица", greenhouse_pg);
+    addPageItem("Освещение", lightning_pg);
+    addPageItem("Паук", hexapod_pg);
+    addPageItem("Логи", ui->pg_log);
+
+    ui->combo_page->setCurrentIndex(0);
+
+    switchPageFromCombo();
+}
+
+
+void MainWindow::switchPageFromCombo(){
+    QObject* obj = ui->combo_page->currentData().value<QObject*>();
+    QWidget* page = qobject_cast<QWidget*>(obj);
+
+    if (!page) {
+        return;
+    }
+
+    if (ui->stwidget_section->indexOf(page) < 0) {
+        return;
+    }
+    if(page == hexapod_pg){
+        hexapod_pg->setFocus(Qt::OtherFocusReason);
+    }
+
+    ui->stwidget_section->setCurrentWidget(page);
 }
 
 
@@ -242,53 +356,6 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event){
 }
 
 
-void MainWindow::refreshPorts(){
-    ui->cmb_ports->clear();
-    const auto ports = QSerialPortInfo::availablePorts();
-    for(const QSerialPortInfo &port : ports){
-        QString text = port.portName();
-        if(!port.description().isEmpty()) text += " - " + port.description();
-        ui->cmb_ports->addItem(text, port.portName());
-    }
-
-    if(ports.isEmpty()) ui->cmb_ports->addItem("COM ports are not found");
-}
-
-
-void MainWindow::connectSerial(){
-    QString portName = ui->cmb_ports->currentData().toString();
-
-    if(portName.isEmpty()){
-        ui->lbl_status->setText("NO PORT!");
-        logLine("COM NO PORT");
-        return;
-    }
-
-    serial.close();
-    serial.setPortName(portName);
-    serial.setBaudRate(9600);
-    serial.setDataBits(QSerialPort::Data8);
-    serial.setParity(QSerialPort::NoParity);
-    serial.setStopBits(QSerialPort::OneStop);
-    serial.setFlowControl(QSerialPort::NoFlowControl);
-
-    if(serial.open(QIODevice::ReadWrite)){
-        ui->lbl_status->setText("CONNECTED");
-        ui->lbl_currentPort->setText(portName);
-        logLine("COM CONECTED");
-    }
-    else{
-        ui->lbl_status->setText("ERROR");
-        logLine("COM ERROR");
-    }
-}
-
-
-
-void MainWindow::onSerialReadyRead(){
-    rxBuffer.append(serial.readAll());
-    parseRadioBuffer();
-}
 
 
 void MainWindow::radioHandleParsedPacket(uint8_t id, uint8_t cmd, const QByteArray &payload)
@@ -300,7 +367,11 @@ void MainWindow::radioHandleParsedPacket(uint8_t id, uint8_t cmd, const QByteArr
                 .arg(QString(payload.toHex(' ').toUpper())));
 
     // 1. Сначала обработать полезные данные.
-    if(id == DEV_GREENHOUSE && cmd == CMD_STATUS_RESPONSE) {
+    if(id == DEV_HEXAPOD && cmd == CMD_HEXAPOD_STATE){
+        handleHexapodState(payload);
+        return;
+    }
+    else if(id == DEV_GREENHOUSE && cmd == CMD_STATUS_RESPONSE) {
         handleGreenhouseStatus(payload);
     }
     else if(id == DEV_HYGROMETER && cmd == CMD_STATUS_RESPONSE) {
@@ -308,11 +379,23 @@ void MainWindow::radioHandleParsedPacket(uint8_t id, uint8_t cmd, const QByteArr
     }
 
     // 2. Потом закрыть ожидающий request, если это он.
-    if(radioWaitingResponse) {
-        if(id == currentRadioJob.expectId && cmd == currentRadioJob.expectCmd) {
-            radioFinishCurrentJob(true);
-        }
+}
+
+
+void MainWindow::handleHexapodState(const QByteArray &data){
+    if(data.size() != 18){
+        return;
     }
+
+    for(uint8_t leg = 0; leg < 6u; leg++){
+        hexapod_angles[leg].coxa = static_cast<int8_t>(data[leg * 3 + 0]);
+
+        hexapod_angles[leg].femur = static_cast<int8_t>(data[leg * 3 + 1]);
+
+        hexapod_angles[leg].tibia = static_cast<int8_t>(data[leg * 3 + 2]);
+    }
+
+    hexapod_pg->updateHexapodModel(hexapod_angles);
 }
 
 
@@ -386,7 +469,7 @@ void MainWindow::sendGreenhouseSingleParam(uint16_t cmd, uint16_t value){
 
     logLine(QString("GREENHOUSE %1").arg(cmd_str));
     QByteArray pkt = makePacket(DEV_GREENHOUSE, cmd, payload);
-    radioEnqueueSendOnly(pkt, QString("GREENHOUSE %1").arg(cmd_str));
+    radioClient.send(pkt, QString("GREENHOUSE %1").arg(cmd_str), 200);
 }
 
 
